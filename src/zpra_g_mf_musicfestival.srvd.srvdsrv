@@ -1,0 +1,15 @@
+@EndUserText: {
+  label: 'Service Definition for ZPRA_G_MF_C_MUSICFESTIVALTP'
+}
+@ObjectModel: {
+  leadingEntity: {
+    name: 'ZPRA_G_MF_C_MUSICFESTIVALTP'
+  }
+}
+define service ZPRA_G_MF_MUSICFESTIVAL
+  provider contracts odata_v4_ui {
+  expose ZPRA_G_MF_C_MUSICFESTIVALTP as MusicFestivals;
+  expose ZPRA_G_MF_C_VISITTP         as Visits;
+  expose ZPRA_G_MF_C_VISITORTP       as Visitors;
+  expose ZPRA_G_MF_I_VISITOR         as VisitorVH;
+}

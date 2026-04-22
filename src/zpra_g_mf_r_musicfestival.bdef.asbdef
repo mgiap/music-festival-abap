@@ -1,0 +1,93 @@
+managed implementation in class ZBP_G_MF_R_MUSICFESTIVAL unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZPRA_G_MF_R_MUSICFESTIVAL alias MusicFestivals
+persistent table ZPRA_G_MF_A_MF
+draft table ZPRA_G_MF_D_MF
+etag master LocalLastChangedAt
+lock master total etag LocalLastChangedAt
+authorization master( global )
+{
+  field ( readonly )
+    UUID,
+    CreatedBy,
+    CreatedAt,
+    LastChangedAt,
+    LocalLastChangedAt,
+    LastChangedBy;
+
+  field ( numbering : managed )
+    UUID;
+
+  create;
+  update;
+  delete;
+
+  draft action Activate optimized;
+  draft action Discard;
+  draft action Edit;
+  draft action Resume;
+
+  draft determine action Prepare;
+
+  validation validateFestival on save { create; update; }
+  determination determineStatus on modify { create; }
+  determination determineInitialSeats on modify { create; field MaxVisitorsNumber; }
+
+  action publish result [1] $self;
+
+  association _Visit { create; with draft; }
+
+  mapping for ZPRA_G_MF_A_MF corresponding
+  {
+    UUID                  = UUID;
+    Title                 = TITLE;
+    Description           = DESCRIPTION;
+    EventDateTime         = EVENT_DATE_TIME;
+    MaxVisitorsNumber     = MAX_VISITORS_NUMBER;
+    FreeVisitorSeats      = FREE_VISITOR_SEATS;
+    VisitorsFeeAmount     = VISITORS_FEE_AMOUNT;
+    VisitorsFeeCurrency   = VISITORS_FEE_CURRENCY;
+    Status                = STATUS;
+    CreatedBy             = CREATED_BY;
+    CreatedAt             = CREATED_AT;
+    LastChangedAt         = LAST_CHANGED_AT;
+    LocalLastChangedAt    = LOCAL_LAST_CHANGED_AT;
+    LastChangedBy         = LAST_CHANGED_BY;
+    ProjectID             = PROJECT_ID;
+  }
+}
+
+define behavior for ZPRA_G_MF_R_VISIT alias Visit
+persistent table zpra_g_mf_a_vst
+draft table zpra_g_mf_d_vst
+lock dependent by _MusicFestival
+authorization dependent by _MusicFestival
+etag master LocalLastChangedAt
+{
+  update;
+  delete;
+
+  field ( readonly ) Uuid, ParentUuid;
+  field ( numbering : managed ) Uuid;
+  field ( mandatory ) VisitorUuid;
+
+  validation validateVisitCreation on save { create; }
+  determination determineVisitStatus on modify { create; }
+  determination determineAvailableSeats on save { create; update; }
+
+  action cancel result [1] $self;
+
+  association _MusicFestival { with draft; }
+
+  mapping for zpra_g_mf_a_vst corresponding
+    {
+      Uuid                = uuid;
+      ParentUuid          = parent_uuid;
+      VisitorUuid         = visitor_uuid;
+      ArtistIndicator     = artist_indicator;
+      Status              = status;
+      LocalLastChangedAt  = local_last_changed_at;
+    }
+}

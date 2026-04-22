@@ -1,0 +1,114 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: {
+    typeName: 'Visit',
+    typeNamePlural: 'Visits',
+    title: {
+      type: #STANDARD,
+      value: 'VisitorName'
+    }
+  }
+}
+annotate view ZPRA_G_MF_C_VISITTP with
+{
+  @UI.facet: [ {
+    label: 'General Information',
+    id: 'GeneralInfo',
+    purpose: #STANDARD,
+    position: 10,
+    type: #IDENTIFICATION_REFERENCE
+  } ]
+  
+  @UI: {
+    lineItem: [ {
+      qualifier: 'MaintainVisits',
+      importance: #HIGH,
+      position: 10,
+      label: 'Visitor'
+    } ],
+    identification: [ { position: 10, label: 'Visitor' } ],
+    textArrangement: #TEXT_ONLY
+  }
+  @Consumption.valueHelpDefinition: [ {
+    entity.name: 'ZPRA_G_MF_I_VISITOR',
+    entity.element: 'Uuid'
+  } ]
+  VisitorUuid;
+  
+  @UI: {
+    lineItem: [ {
+      qualifier: 'MaintainVisits',
+      importance: #HIGH,
+      position: 20,
+      label: 'Email'
+    } ],
+    identification: [ { position: 20, label: 'Email' } ]
+  }
+  VisitorEmail;
+  
+  @UI.lineItem: [ {
+    qualifier: 'VisitorVisits',
+    importance: #HIGH,
+    position: 10,
+    label: 'Festival'
+  } ]
+  FestivalTitle;
+
+  @UI.lineItem: [ {
+    qualifier: 'VisitorVisits',
+    importance: #HIGH,
+    position: 20,
+    label: 'Event Date'
+  } ]
+  FestivalEventDateTime;
+
+  @UI: {
+    lineItem: [ {
+      qualifier: 'MaintainVisits',
+      importance: #HIGH,
+      position: 30,
+      label: 'Status'
+    } ],
+    identification: [ { position: 30, label: 'Status' } ],
+    textArrangement: #TEXT_ONLY
+  }
+  Status;
+  
+  @UI.hidden: true
+  StatusText;
+
+  @UI: {
+    lineItem: [
+    {
+      qualifier: 'MaintainVisits',
+      importance: #HIGH,
+      position: 70
+    },
+    {
+        qualifier: 'VisitorVisits',
+        importance: #HIGH,
+        position: 30,
+        label: 'Artist'
+      }
+    ],
+    identification: [ { position: 40, label: 'Artist' } ]
+  }
+  ArtistIndicator;
+  
+  @UI: {
+    lineItem: [ {
+      qualifier: 'MaintainVisits',
+      position: 90,
+      type: #FOR_ACTION,
+      dataAction: 'cancel',
+      label: 'Cancel'
+    } ],
+    identification: [ {
+      position: 90,
+      type: #FOR_ACTION,
+      dataAction: 'cancel',
+      label: 'Cancel'
+    } ]
+  }
+  Uuid; 
+}

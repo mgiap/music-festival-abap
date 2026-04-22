@@ -1,0 +1,6 @@
+@EndUserText.label: 'ZPRA_G_MF_C_VISITORTP'
+@MappingRole: true
+define role ZPRA_G_MF_C_VISITORTP {
+  grant select on ZPRA_G_MF_C_VISITORTP
+  where INHERITING CONDITIONS FROM ENTITY ZPRA_G_MF_R_VISITOR REPLACING { ROOT WITH _BaseEntity };
+}

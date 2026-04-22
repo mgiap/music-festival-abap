@@ -1,0 +1,167 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: {
+    typeName: 'Music Festival',
+    typeNamePlural: 'Music Festivals',
+    title: {
+      type: #STANDARD,
+      value: 'Title'
+    },
+    description: {
+      type: #STANDARD,
+      value: 'Description'
+    }
+  }
+}
+annotate view ZPRA_G_MF_C_MUSICFESTIVALTP with
+{
+  @UI.facet: [
+    {
+      id: 'EventDateTime',
+      purpose: #HEADER,
+      type: #DATAPOINT_REFERENCE,
+      targetQualifier: 'EventDateTime',
+      position: 10
+    },
+    {
+      id: 'CapacityText',
+      purpose: #HEADER,
+      type: #DATAPOINT_REFERENCE,
+      targetQualifier: 'CapacityText',
+      position: 20
+    },
+    {
+      id: 'VisitorsFeeAmount',
+      purpose: #HEADER,
+      type: #DATAPOINT_REFERENCE,
+      targetQualifier: 'VisitorsFeeAmount',
+      position: 30
+    },
+    {
+      id: 'Status',
+      purpose: #HEADER,
+      type: #DATAPOINT_REFERENCE,
+      targetQualifier: 'Status',
+      position: 40
+    },
+    {
+      id: 'GeneralInfo',
+      purpose: #STANDARD,
+      type: #IDENTIFICATION_REFERENCE,
+      position: 10,
+      label: 'General Information'
+    },
+    {
+      id: 'Visits',
+      purpose: #STANDARD,
+      type: #LINEITEM_REFERENCE,
+      targetElement: '_Visit',
+      targetQualifier: 'MaintainVisits',
+      position: 20,
+      label: 'Visits'
+    }
+  ]
+
+  @UI: {
+    identification: [ {
+      type: #FOR_ACTION,
+      dataAction: 'publish',
+      position: 10,
+      label: 'Publish'
+    } ],
+    hidden: true
+  }
+  UUID;
+
+  @UI: {
+    lineItem: [ { importance: #HIGH, position: 10 } ],
+    identification: [ { position: 10 } ],
+    selectionField: [ { position: 10 } ]
+  }
+  Title;
+
+  @UI: {
+    lineItem: [ { importance: #HIGH, position: 20 } ],
+    identification: [ { position: 20 } ],
+    selectionField: [ { position: 20 } ]
+  }
+  Description;
+
+  @UI: {
+    lineItem: [ { importance: #HIGH, position: 30 } ],
+    identification: [ { position: 30 } ],
+    selectionField: [ { position: 30 } ],
+    dataPoint: {
+      qualifier: 'EventDateTime',
+      title: 'Event Date'
+    }
+  }
+  EventDateTime;
+
+  @UI: {
+    lineItem: [ { importance: #HIGH, position: 40 } ],
+    identification: [ { position: 40 } ],
+    selectionField: [ { position: 40 } ]
+  }
+  MaxVisitorsNumber;
+
+  @UI: {
+    identification: [ { position: 50 } ]
+  }
+  FreeVisitorSeats;
+
+  @UI: {
+    dataPoint: {
+      qualifier: 'VisitorsFeeAmount',
+      title: 'Price'
+    },
+    identification: [ { position: 60 } ]
+  }
+  VisitorsFeeAmount;
+
+  @UI: {
+    identification: [ { position: 70 } ]
+  }
+  VisitorsFeeCurrency;
+
+  @UI: {
+    dataPoint: {
+      qualifier: 'Status',
+      title: 'Status'
+    },
+    lineItem: [ { importance: #HIGH, position: 50 } ],
+    identification: [ { position: 80 } ],
+    selectionField: [ { position: 50 } ],
+    textArrangement: #TEXT_ONLY
+  }
+  Status;
+  
+  @UI: {
+    dataPoint: {
+      qualifier: 'CapacityText',
+      title: 'Available'
+    }
+  }
+  CapacityText;
+
+  @UI.identification: [ { position: 90 } ]
+  CreatedBy;
+
+  @UI.identification: [ { position: 100 } ]
+  LastChangedAt;
+
+  @UI.hidden: true
+  LocalLastChangedAt;
+
+  @UI.identification: [ { position: 110 } ]
+  LastChangedBy;
+
+  @UI.hidden: true
+  ProjectID;
+
+  @UI.hidden: true
+  StatusText;
+
+  
+  
+}

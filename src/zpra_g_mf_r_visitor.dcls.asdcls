@@ -1,0 +1,6 @@
+@EndUserText.label: 'ZPRA_G_MF_R_VISITOR'
+@MappingRole: true
+define role ZPRA_G_MF_R_VISITOR {
+  grant select on ZPRA_G_MF_R_VISITOR
+  where TRUE;
+}

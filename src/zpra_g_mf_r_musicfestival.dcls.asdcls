@@ -1,0 +1,6 @@
+@EndUserText.label: 'ZPRA_G_MF_R_MUSICFESTIVAL'
+@MappingRole: true
+define role ZPRA_G_MF_R_MUSICFESTIVAL {
+  grant select on ZPRA_G_MF_R_MUSICFESTIVAL
+  where TRUE;
+}
