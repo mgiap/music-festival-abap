@@ -1168,3 +1168,356 @@ ENDMETHOD.
 This produces the `98 / 100` style display shown in the app header.
 
 ---
+
+## Step 7: Service Layer
+
+The service layer is what makes the app accessible as an OData service. It consists of two parts — the **Service Definition** which declares what entities to expose, and the **Service Binding** which binds the service to a protocol and scenario.
+
+### Service Definitions
+
+There are two separate service definitions in this app — one for each UI app.
+
+**`ZPRA_G_MF_MUSICFESTIVAL`** — powers the Music Festival app:
+
+```abap
+define service ZPRA_G_MF_MUSICFESTIVAL
+  provider contracts odata_v4_ui {
+  expose ZPRA_G_MF_C_MUSICFESTIVALTP as MusicFestivals;
+  expose ZPRA_G_MF_C_VISITTP         as Visits;
+  expose ZPRA_G_MF_C_VISITORTP       as Visitors;
+  expose ZPRA_G_MF_I_VISITOR         as VisitorVH;
+}
+```
+
+**`ZPRA_G_MF_VISITOR`** — powers the Visitor app:
+
+```abap
+define service ZPRA_G_MF_VISITOR
+  provider contracts odata_v4_ui {
+  expose ZPRA_G_MF_C_VISITORTP       as Visitors;
+  expose ZPRA_G_MF_C_VISITTP         as Visits;
+  expose ZPRA_G_MF_C_MUSICFESTIVALTP as MusicFestivals;
+}
+```
+
+A few things worth noting here:
+
+- Both services expose `ZPRA_G_MF_C_VISITTP` — this is required because Visit is a child node of MusicFestival. Even in the Visitor app, the Visit and MusicFestival entities must be exposed alongside Visitor, otherwise the service binding will throw an activation error about draft-enabled subnodes exposed without their root.
+- `ZPRA_G_MF_I_VISITOR` is exposed in the MusicFestival service as `VisitorVH` — this is the value help view used when adding a visitor to a festival.
+- The `leadingEntity` annotation tells Fiori Elements which entity is the main list page when the app launches.
+
+### Service Bindings
+
+Each service definition has a corresponding service binding that ties it to the OData V4 protocol and UI scenario:
+
+| Service Binding | Service Definition | Protocol |
+|---|---|---|
+| `ZPRA_G_MF_UI_MUSICFESTIVAL_O4` | `ZPRA_G_MF_MUSICFESTIVAL` | OData V4 UI |
+| `ZPRA_G_MF_UI_VISITOR_O4` | `ZPRA_G_MF_VISITOR` | OData V4 UI |
+
+To create a service binding in Eclipse ADT:
+
+1. Right-click your package → **New > Other ABAP Repository Object > Service Binding**
+2. Enter a name and select the service definition
+3. Set binding type to **OData V4 - UI**
+4. Save and activate
+5. Click **Publish** to make it available
+
+After publishing, you can click **Preview** on any entity in the service binding to launch the Fiori Elements app directly from Eclipse — no deployment needed.
+
+> 💡 Whenever you add a new entity to the service definition, you need to **unpublish and republish** the service binding for the change to take effect.
+
+---
+
+## Step 8: Metadata Extensions
+
+Metadata Extensions (MDE) are where all UI annotations live — they control how the app looks and behaves in Fiori Elements without touching the data model. Keeping annotations in a separate layer is a clean core principle in RAP.
+
+There are three MDEs in this app, one for each projection view.
+
+---
+
+### MusicFestival MDE
+
+**Header Info**
+
+The title and description shown at the top of the detail page:
+
+```abap
+@UI: {
+  headerInfo: {
+    typeName: 'Music Festival',
+    typeNamePlural: 'Music Festivals',
+    title: { type: #STANDARD, value: 'Title' },
+    description: { type: #STANDARD, value: 'Description' }
+  }
+}
+```
+
+**Header Datapoints**
+
+Key figures shown prominently in the header area — Event Date, Capacity, Price, Status. Each needs a `#DATAPOINT_REFERENCE` facet and a `dataPoint` annotation on the field:
+
+```abap
+" Facet
+{ id: 'Status', purpose: #HEADER, type: #DATAPOINT_REFERENCE,
+  targetQualifier: 'Status', position: 40 }
+
+" Field annotation
+@UI: {
+  dataPoint: { qualifier: 'Status', title: 'Status' },
+  textArrangement: #TEXT_ONLY
+}
+Status;
+```
+
+`#TEXT_ONLY` makes the UI display `Published` instead of raw `P`.
+
+**Facets — Tabs on the Detail Page**
+
+`#IDENTIFICATION_REFERENCE` renders the General Information form. `#LINEITEM_REFERENCE` renders a table tab. The `targetQualifier` tells Fiori Elements which set of `@UI.lineItem` annotations to use for the table columns:
+
+```abap
+{ id: 'GeneralInfo', purpose: #STANDARD,
+  type: #IDENTIFICATION_REFERENCE, position: 10 },
+{ id: 'Visits', purpose: #STANDARD,
+  type: #LINEITEM_REFERENCE,
+  targetElement: '_Visit',
+  targetQualifier: 'MaintainVisits',
+  position: 20, label: 'Visits' }
+```
+
+**Action Button**
+
+The Publish button is declared as a `#FOR_ACTION` identification item attached to the UUID field:
+
+```abap
+@UI: {
+  identification: [ {
+    type: #FOR_ACTION,
+    dataAction: 'publish',
+    label: 'Publish'
+  } ],
+  hidden: true
+}
+UUID;
+```
+
+**Hidden Fields**
+
+Fields used internally but not shown in the form:
+
+```abap
+@UI.hidden: true
+StatusText;
+
+@UI.hidden: true
+ProjectID;
+```
+
+---
+
+### Visitor MDE
+
+**Header Info**
+
+Shows visitor name as title and email as description:
+
+```abap
+@UI.headerInfo.title.value: 'Name'
+@UI.headerInfo.description.value: 'Email'
+```
+
+**Facets — Music Festivals Tab**
+
+The Visitor detail page has two tabs — General Information and Music Festivals. The Music Festivals tab lists all festivals the visitor has attended by navigating through the `_Visits` association with the `VisitorVisits` qualifier:
+
+```abap
+{
+  label: 'Music Festivals',
+  id: 'MusicFestivals',
+  purpose: #STANDARD,
+  position: 20,
+  type: #LINEITEM_REFERENCE,
+  targetElement: '_Visits',
+  targetQualifier: 'VisitorVisits'
+}
+```
+
+This works because `_Visits` is the association defined in `ZPRA_G_MF_R_VISITOR` pointing back to the Visit entity. From the Visitor's perspective, each visit record represents a festival they attended. The columns shown (`FestivalTitle`, `FestivalEventDateTime`, `ArtistIndicator`) are fetched directly from parent associations in the Visit projection — no extra joins needed.
+
+---
+
+### Visit MDE
+
+The Visit MDE is the most interesting one — the same entity appears in two different contexts with different columns.
+
+**Two Qualifier Sets**
+
+`MaintainVisits` is used in the **Music Festival** detail page — it shows visitor-focused columns:
+
+```abap
+@UI.lineItem: [ { qualifier: 'MaintainVisits', position: 10, label: 'Visitor' } ]
+VisitorUuid;
+
+@UI.lineItem: [ { qualifier: 'MaintainVisits', position: 20, label: 'Email' } ]
+VisitorEmail;
+
+@UI.lineItem: [ { qualifier: 'MaintainVisits', position: 30, label: 'Status' } ]
+Status;
+
+@UI.lineItem: [ { qualifier: 'MaintainVisits', position: 70 } ]
+ArtistIndicator;
+```
+
+`VisitorVisits` is used in the **Visitor** detail page — it shows festival-focused columns:
+
+```abap
+@UI.lineItem: [ { qualifier: 'VisitorVisits', position: 10, label: 'Festival' } ]
+FestivalTitle;
+
+@UI.lineItem: [ { qualifier: 'VisitorVisits', position: 20, label: 'Event Date' } ]
+FestivalEventDateTime;
+
+@UI.lineItem: [ { qualifier: 'VisitorVisits', position: 30, label: 'Artist' } ]
+ArtistIndicator;
+```
+
+A field can appear in both qualifiers — `ArtistIndicator` is shown in both contexts:
+
+```abap
+@UI: {
+  lineItem: [
+    { qualifier: 'MaintainVisits', importance: #HIGH, position: 70 },
+    { qualifier: 'VisitorVisits',  importance: #HIGH, position: 30, label: 'Artist' }
+  ]
+}
+ArtistIndicator;
+```
+
+**Value Help**
+
+The visitor search help is attached to `VisitorUuid` — when the user clicks the field, a popup appears showing visitors by name and email:
+
+```abap
+@Consumption.valueHelpDefinition: [ {
+  entity.name: 'ZPRA_G_MF_I_VISITOR',
+  entity.element: 'Uuid'
+} ]
+VisitorUuid;
+```
+
+**Cancel Action Button**
+
+The Cancel button appears in the Visits table in the Music Festival detail page:
+
+```abap
+@UI: {
+  lineItem: [ {
+    qualifier: 'MaintainVisits',
+    position: 90,
+    type: #FOR_ACTION,
+    dataAction: 'cancel',
+    label: 'Cancel'
+  } ]
+}
+Uuid;
+```
+
+**Hidden Fields**
+
+Fields fetched for text resolution but not shown directly in the UI:
+
+```abap
+@UI.hidden: true
+StatusText;
+
+@UI.hidden: true
+VisitorName;
+```
+
+---
+
+## Summary
+
+Here is the full list of objects in this app grouped by type:
+
+### Data Dictionary
+
+| Object | Type | Description |
+|---|---|---|
+| `ZPRA_GIAP_MF_STATUS_CODE` | Domain | Festival status fixed values |
+| `ZPRA_GIAP_MF_VISIT_STATUS_CODE` | Domain | Visit status fixed values |
+| `ZPRA_GIAP_MF_*` | Data Element | Field type definitions (13 total) |
+| `ZPRA_G_MF_A_MF` | Database Table | Music Festival persistent data |
+| `ZPRA_G_MF_A_VSTR` | Database Table | Visitor persistent data |
+| `ZPRA_G_MF_A_VST` | Database Table | Visit persistent data |
+| `ZPRA_G_MF_D_MF` | Database Table | Music Festival draft table |
+| `ZPRA_G_MF_D_VSTR` | Database Table | Visitor draft table |
+| `ZPRA_G_MF_D_VST` | Database Table | Visit draft table |
+
+### CDS Views
+
+| Object | Type | Description |
+|---|---|---|
+| `ZPRA_G_MF_R_MUSICFESTIVAL` | Data Definition | MusicFestival base view |
+| `ZPRA_G_MF_R_VISITOR` | Data Definition | Visitor base view |
+| `ZPRA_G_MF_R_VISIT` | Data Definition | Visit base view |
+| `ZPRA_G_MF_C_MUSICFESTIVALTP` | Data Definition | MusicFestival projection |
+| `ZPRA_G_MF_C_VISITORTP` | Data Definition | Visitor projection |
+| `ZPRA_G_MF_C_VISITTP` | Data Definition | Visit projection |
+| `ZPRA_G_MF_I_MF_STATUS_VH` | Data Definition | Festival status value help |
+| `ZPRA_G_MF_I_VISIT_STATUS_VH` | Data Definition | Visit status value help |
+| `ZPRA_G_MF_I_VISITOR` | Data Definition | Visitor value help |
+
+### Behavior
+
+| Object | Type | Description |
+|---|---|---|
+| `ZPRA_G_MF_R_MUSICFESTIVAL` | Behavior Definition | Root behavior for MusicFestival and Visit |
+| `ZPRA_G_MF_R_VISITOR` | Behavior Definition | Root behavior for Visitor |
+| `ZPRA_G_MF_C_MUSICFESTIVALTP` | Behavior Definition | Projection behavior for MusicFestival |
+| `ZPRA_G_MF_C_VISITORTP` | Behavior Definition | Projection behavior for Visitor |
+| `ZBP_G_MF_R_MUSICFESTIVAL` | Class | Root behavior implementation |
+| `ZBP_G_MF_R_VISITOR` | Class | Visitor behavior implementation |
+| `ZBP_G_MF_C_MUSICFESTTP` | Class | Projection behavior implementation |
+| `ZBP_G_MF_C_VISITORTP` | Class | Visitor projection behavior implementation |
+| `ZCL_G_MF_CALC_MF_ELEMENTS` | Class | Virtual element calculation |
+
+### Service
+
+| Object | Type | Description |
+|---|---|---|
+| `ZPRA_G_MF_MUSICFESTIVAL` | Service Definition | MusicFestival OData service |
+| `ZPRA_G_MF_VISITOR` | Service Definition | Visitor OData service |
+| `ZPRA_G_MF_UI_MUSICFESTIVAL_O4` | Service Binding | MusicFestival OData V4 binding |
+| `ZPRA_G_MF_UI_VISITOR_O4` | Service Binding | Visitor OData V4 binding |
+
+### UI
+
+| Object | Type | Description |
+|---|---|---|
+| `ZPRA_G_MF_C_MUSICFESTIVALTP` | Metadata Extension | MusicFestival UI annotations |
+| `ZPRA_G_MF_C_VISITORTP` | Metadata Extension | Visitor UI annotations |
+| `ZPRA_G_MF_C_VISITTP` | Metadata Extension | Visit UI annotations |
+
+---
+
+## Known Limitations
+
+There are a few edge cases that are not yet handled:
+
+- **Fully Booked status** — when `FreeVisitorSeats` reaches 0, the festival status should automatically switch to `F`. Currently this is not implemented.
+- **Duplicate visitor check** — nothing prevents the same visitor from being added to the same festival twice.
+- **Cancel cascade** — cancelling a festival does not automatically cancel all its visits.
+- **Max capacity reduction** — lowering `MaxVisitorsNumber` below the current number of booked visits results in negative available seats with no validation warning.
+
+---
+
+## References
+
+- [SAP RAP Documentation](https://help.sap.com/docs/abap-cloud/abap-rap/abap-restful-application-programming-model)
+- [ABAP Partner Reference Application](https://github.com/SAP-samples/abap-partner-reference-application)
+- [SAP Fiori Elements Feature Showcase](https://github.com/SAP-samples/abap-fiori-elements-feature-showcase)
+
+---
